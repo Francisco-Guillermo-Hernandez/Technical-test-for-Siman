@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.tienda.Productos.Entities.*;
 import com.tienda.Productos.Exceptions.*;
 import com.tienda.Productos.Services.ProductService;
+import com.tienda.Productos.Mapper.ProductMapper;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.mvc.support.DefaultHandlerExceptionResolver;
@@ -33,10 +34,12 @@ public class ProductController {
 
 
     private final ProductService productService;
+    private final ProductMapper productMapper;
     private final Logger logger = LoggerFactory.getLogger(ProductController.class);
 
-    public ProductController(ProductService productService) {
+    public ProductController(ProductService productService, ProductMapper productMapper) {
         this.productService = productService;
+        this.productMapper = productMapper;
     }
 
     @GetMapping("/count")
@@ -51,34 +54,23 @@ public class ProductController {
         @RequestBody ProductDto product
     ) {
 
-        var p = new Product();
-
-        p.setDescripcion(product.getDescripcion());
-        p.setActivo(product.getActivo());
-        p.setNombre(product.getNombre());
-        p.setPrecio(product.getPrecio());
-        p.setSubCategoriaId(product.getSubCategoriaId());
-        p.setMarcaId(product.getMarcaId());
-        p.setStock(product.getStock());
-        
-        return this.productService.createProduct(p);
+        try {
+            Product p = productMapper.toEntity(product);
+            return this.productService.createProduct(p);
+        } catch (Exception e) {
+            logger.error("createProduct", e);
+            throw new BadRequestException("Error en la creacion del producto");
+        }
     }
 
     @PutMapping("/{id}")
     public Object updateProduct(
-        @PathVariable("id") long id, 
+        @PathVariable("id") int id, 
         @Valid @RequestBody ProductDto entity)
     {
         try {
-            Product product = new Product();
+            Product product = productMapper.toEntity(entity);
             product.setId(id);
-            product.setDescripcion(entity.getDescripcion());
-            product.setActivo(entity.getActivo());
-            product.setNombre(entity.getNombre());
-            product.setPrecio(entity.getPrecio());
-            product.setSubCategoriaId(entity.getSubCategoriaId());
-            product.setMarcaId(entity.getMarcaId());
-            product.setStock(entity.getStock());
 
             return this.productService.updateProduct(product);
         } catch (EmptyResultDataAccessException e) {

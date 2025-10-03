@@ -21,7 +21,7 @@ public class ProductService {
         return productDao.createProduct(product);
     }
 
-    public int updateProduct(Product product) {
+    public boolean updateProduct(Product product) {
         return productDao.updateProduct(product);
     }
 

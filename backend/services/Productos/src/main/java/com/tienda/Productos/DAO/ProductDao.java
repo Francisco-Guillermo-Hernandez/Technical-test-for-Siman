@@ -1,6 +1,7 @@
 package com.tienda.Productos.DAO;
 
 
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -15,10 +16,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.springframework.jdbc.core.CallableStatementCallback;
+import org.springframework.jdbc.core.JdbcTemplate;
+
+import java.sql.Types;
+
 @Repository
 public class ProductDao {
 
     
+    private final Logger logger = LoggerFactory.getLogger(ProductDao.class);
     private JdbcTemplate jdbcTemplate;
     
     @Autowired
@@ -28,55 +40,79 @@ public class ProductDao {
 
 
     public Integer createProduct(Product product) {
-        String sql = "SELECT sp_crear_producto(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        
-        return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> rs.getInt(1), (Object[]) new Object[] {
-            product.getNombre(),
-            product.getPrecio(),
-            product.getCosto(),
-            product.getStock(),
-            product.getDescripcion(),
-            product.getResumen(),
-            product.getSubCategoriaId(),
-            product.getEspecificaciones(),
-            product.getColorId(),
-            product.getStatusId(),
-            product.getSku(),
-            product.getFichaTecnica() != null ? product.getFichaTecnica().toString() : null,
-            product.getMarcaId(),
-            product.getPeso(),
-            product.getDimensiones()
-        });
+        String sql = "SELECT sp_crear_producto(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?)";
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+
+            String fichaTecnicaJson = null;
+            if (product.getFichaTecnica() != null) {
+                fichaTecnicaJson = objectMapper.writeValueAsString(product.getFichaTecnica());
+            }
+
+            logger.info("create Product {}", product);
+
+            return jdbcTemplate.queryForObject(
+                sql,
+                new Object[] {
+                    product.getNombre(),
+                    product.getPrecio(),
+                    product.getCosto(),
+                    product.getStock(),
+                    product.getDescripcion(),
+                    product.getResumen(),
+                    product.getSubCategoriaId(),
+                    product.getEspecificaciones(),
+                    product.getColorId(),
+                    product.getStatusId(),
+                    product.getSku(),
+                    fichaTecnicaJson != null ? fichaTecnicaJson : "{}",
+                    product.getMarcaId(),
+                    product.getPeso(),
+                    product.getDimensiones()
+                },
+                Integer.class
+            );
+        } catch (Exception e) {
+            throw new RuntimeException("Error creating product", e);
+        }
     }
 
-    public int updateProduct(Product product) {
-        String sql = """
-            UPDATE productos 
-            SET nombre = ?, precio = ?, costo = ?, stock = ?, descripcion = ?, resumen = ?,
-                sub_categoria_id = ?, especificaciones = ?, color_id = ?, status_id = ?,
-                sku = ?, ficha_tecnica = ?, marca_id = ?, peso = ?, dimensiones = ?,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
-            """;
-            
-        return jdbcTemplate.update(sql, (Object[]) new Object[] {
-            product.getNombre(),
-            product.getPrecio(),
-            product.getCosto(),
-            product.getStock(),
-            product.getDescripcion(),
-            product.getResumen(),
-            product.getSubCategoriaId(),
-            product.getEspecificaciones(),
-            product.getColorId(),
-            product.getStatusId(),
-            product.getSku(),
-            product.getFichaTecnica() != null ? product.getFichaTecnica().toString() : null,
-            product.getMarcaId(),
-            product.getPeso(),
-            product.getDimensiones(),
-            product.getId()
-        });
+    public Boolean updateProduct(Product product) {
+        String sql = "SELECT sp_actualizar_producto(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?)";
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+
+            String fichaTecnicaJson = null;
+            if (product.getFichaTecnica() != null) {
+                fichaTecnicaJson = objectMapper.writeValueAsString(product.getFichaTecnica());
+            }
+
+            logger.info("update Product {}", product);
+
+            return jdbcTemplate.queryForObject(
+                    sql,
+                    new Object[] {
+                            product.getId(),
+                            product.getNombre(),
+                            product.getPrecio(),
+                            product.getCosto(),
+                            product.getStock(),
+                            product.getDescripcion(),
+                            product.getResumen(),
+                            product.getSubCategoriaId(),
+                            product.getEspecificaciones(),
+                            product.getColorId(),
+                            product.getStatusId(),
+                            product.getSku(),
+                            fichaTecnicaJson != null ? fichaTecnicaJson : "{}",
+                            product.getMarcaId(),
+                            product.getPeso(),
+                            product.getDimensiones()
+                    },
+                    Boolean.class);
+        } catch (Exception e) {
+            throw new RuntimeException("Error updating product", e);
+        }
     }
 
     public List<Product> filterProducts(ProductFilter filter) {
@@ -104,7 +140,7 @@ public class ProductDao {
         @Override
         public Product mapRow(ResultSet rs, int rowNum) throws SQLException {
             Product product = new Product();
-            product.setId(rs.getLong("id"));
+            product.setId(rs.getInt("id"));
             product.setNombre(rs.getString("nombre"));
             product.setPrecio(rs.getBigDecimal("precio"));
             product.setCosto(rs.getBigDecimal("costo"));
