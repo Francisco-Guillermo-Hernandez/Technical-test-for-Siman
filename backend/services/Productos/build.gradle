@@ -45,3 +45,12 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+jar {
+    archiveBaseName = 'products-service' 
+    manifest {
+            attributes 'Implementation-Title': project.name,
+                       'Implementation-Version': project.version,
+                       'Main-Class': 'com.tienda.Productos.ProductosApplication' 
+    }
+}

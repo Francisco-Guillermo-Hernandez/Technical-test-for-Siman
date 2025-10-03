@@ -38,6 +38,9 @@ public class ProductDto {
     
     @Size(max = 250, message = "El Resumen debe de contener menos de 250 caracteres.")
     private String resumen;
+
+    @Size(max = 250, message = "El Resumen debe de contener menos de 250 caracteres.")
+    private String descripcion;
     
     private Integer subCategoriaId;
     

@@ -104,7 +104,7 @@ public class ProductDao {
         @Override
         public Product mapRow(ResultSet rs, int rowNum) throws SQLException {
             Product product = new Product();
-            product.setId(rs.getInt("id"));
+            product.setId(rs.getLong("id"));
             product.setNombre(rs.getString("nombre"));
             product.setPrecio(rs.getBigDecimal("precio"));
             product.setCosto(rs.getBigDecimal("costo"));

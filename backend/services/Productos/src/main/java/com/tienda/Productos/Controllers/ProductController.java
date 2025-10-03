@@ -48,7 +48,7 @@ public class ProductController {
     @PostMapping("/")
     public Object createProduct(
         @Valid
-        @RequestBody Product product
+        @RequestBody ProductDto product
     ) {
 
         var p = new Product();
@@ -64,11 +64,30 @@ public class ProductController {
         return this.productService.createProduct(p);
     }
 
-    @PutMapping("path/{id}")
-    public Object updateProduct(@PathVariable String id, @RequestBody String entity) {
-        
-        
-        return entity;
+    @PutMapping("/{id}")
+    public Object updateProduct(
+        @PathVariable("id") long id, 
+        @Valid @RequestBody ProductDto entity)
+    {
+        try {
+            Product product = new Product();
+            product.setId(id);
+            product.setDescripcion(entity.getDescripcion());
+            product.setActivo(entity.getActivo());
+            product.setNombre(entity.getNombre());
+            product.setPrecio(entity.getPrecio());
+            product.setSubCategoriaId(entity.getSubCategoriaId());
+            product.setMarcaId(entity.getMarcaId());
+            product.setStock(entity.getStock());
+
+            return this.productService.updateProduct(product);
+        } catch (EmptyResultDataAccessException e) {
+            throw new ResourceNotFoundException("El producto no existe");
+        } catch (MethodArgumentTypeMismatchException e) {
+            throw new BadRequestException("El formato es invalido");
+        } catch (NumberFormatException e) {
+            throw new BadFormatException("Se produjo un error");
+        }
     }
     
 
