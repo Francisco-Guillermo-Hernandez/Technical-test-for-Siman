@@ -14,6 +14,33 @@ java {
 	}
 }
 
+compileJava.options.encoding = 'UTF-8'
+
+tasks.withType(JavaCompile) {
+	options.encoding = 'UTF-8'
+}
+
+
+jar {
+    archiveBaseName = 'products-service' 
+    manifest {
+            attributes 'Implementation-Title': project.name,
+                       'Implementation-Version': project.version,
+                       'Main-Class': 'com.tienda.Productos.ProductosApplication' 
+    }
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+bootJar {
+    archiveBaseName = 'products-service'
+    archiveVersion = project.version
+    manifest {
+        attributes 'Implementation-Title': project.name,
+                   'Implementation-Version': project.version,
+                   'Main-Class': 'com.tienda.Productos.ProductosApplication'
+    }
+}
+
 configurations {
 	compileOnly {
 		extendsFrom annotationProcessor
@@ -57,11 +84,21 @@ tasks.named('test') {
 	useJUnitPlatform()
 }
 
-jar {
-    archiveBaseName = 'products-service' 
-    manifest {
-            attributes 'Implementation-Title': project.name,
-                       'Implementation-Version': project.version,
-                       'Main-Class': 'com.tienda.Productos.ProductosApplication' 
-    }
+// jar {
+// 	baseName = 'products-service' 
+//     // archiveBaseName = 'products-service' 
+//     // manifest {
+//     //         attributes 'Implementation-Title': project.name,
+//     //                    'Implementation-Version': project.version,
+//     //                    'Main-Class': 'com.tienda.Productos.ProductosApplication' 
+//     // }
+// }
+
+    // build.gradle (Groovy DSL)
+task buildDockerImage(type: Exec) {
+    commandLine 'docker', 'build', '-t', 'products-service:latest', '.'
+}
+
+tasks.named('bootBuildImage') {
+    imageName = 'products-service:latest'
 }
