@@ -23,11 +23,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PutMapping;
 
 import com.tienda.Productos.DTO.ProductDto;
-import com.tienda.Productos.Entities.Product;
+
 import jakarta.validation.Valid;
 
+import org.springframework.web.bind.annotation.CrossOrigin;
 
-
+// @CrossOrigin(origins = { "http://localhost:3000", "http://localhost:5050/ "})
 @RestController
 @RequestMapping("/products")
 public class ProductController {

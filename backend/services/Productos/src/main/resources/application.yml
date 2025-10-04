@@ -1,5 +1,5 @@
 server:
-  port: 8282
+  port: 8283
   servlet:
     context-path: /api/v1
 
@@ -11,6 +11,7 @@ spring:
   
   datasource:
     url: jdbc:postgresql://localhost:5432/tienda_db
+    # url: jdbc:postgresql://postgres:5432/tienda_db
     username: tienda_user
     password: tienda_pass
     driver-class-name: org.postgresql.Driver

@@ -16,13 +16,23 @@ RUN chmod +x gradlew
 # Build the jar (bootJar will create the runnable jar)
 RUN ./gradlew bootJar --no-daemon
 
+# Copy the executable (fat) jar to a stable path so the runtime stage can pick it reliably
+RUN sh -c '\
+	for f in build/libs/*.jar; do \
+		case "$f" in \
+			*-plain.jar) ;; \
+			*) cp "$f" /workspace/app.jar; break ;; \
+		esac; \
+	done; \
+'
+
 # Stage 2: Runtime image
 FROM amazoncorretto:21-alpine-jdk
 
 WORKDIR /app
 
-# Copy the jar from the builder stage
-COPY --from=builder /workspace/build/libs/*-plain.jar app.jar
+# Copy the resolved executable jar from the builder stage
+COPY --from=builder /workspace/app.jar /app/app.jar
 
 # Expose the port configured in application.yml (8282)
 EXPOSE 8282
