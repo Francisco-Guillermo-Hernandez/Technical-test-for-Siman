@@ -65,6 +65,17 @@ services:
       - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:29092
       - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
 
+  catalogos-service:
+    build:
+      context: ./backend/services/Catalogos
+      dockerfile: Dockerfile
+    container_name: tienda-catalogos-service
+    ports:
+      - "8989:8989"  
+    depends_on:
+      - postgres
+    environment:
+      - URL=jdbc:postgresql://postgres:5432/tienda_db
 
   productos-service:
     build:
