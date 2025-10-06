@@ -8,41 +8,42 @@ const AppMenu = () => {
             label: 'Productos',
             icon: 'pi pi-fw pi-wallet',
             items: [
-                {
-                    label: 'Product Overview',
-                    icon: 'pi pi-fw pi-image',
-                    to: '/ecommerce/product-overview'
-                },
-                {
-                    label: 'Product List',
+                 {
+                    label: 'Listado de productos',
                     icon: 'pi pi-fw pi-list',
-                    to: '/ecommerce/product-list'
+                    to: '/dashboard/products'
                 },
+                // {
+                //     label: 'Product Overview',
+                //     icon: 'pi pi-fw pi-image',
+                //     to: '/ecommerce/product-overview'
+                // },
+
                 {
-                    label: 'New Product',
+                    label: 'Registrar un nuevo producto',
                     icon: 'pi pi-fw pi-plus',
-                    to: '/ecommerce/new-product'
+                    to: '/dashboard/new-product'
                 },
-                {
-                    label: 'Shopping Cart',
-                    icon: 'pi pi-fw pi-shopping-cart',
-                    to: '/ecommerce/shopping-cart'
-                },
-                {
-                    label: 'Checkout Form',
-                    icon: 'pi pi-fw pi-check-square',
-                    to: '/ecommerce/checkout-form'
-                },
-                {
-                    label: 'Order History',
-                    icon: 'pi pi-fw pi-history',
-                    to: '/ecommerce/order-history'
-                },
-                {
-                    label: 'Order Summary',
-                    icon: 'pi pi-fw pi-file',
-                    to: '/ecommerce/order-summary'
-                }
+                // {
+                //     label: 'Shopping Cart',
+                //     icon: 'pi pi-fw pi-shopping-cart',
+                //     to: '/ecommerce/shopping-cart'
+                // },
+                // {
+                //     label: 'Checkout Form',
+                //     icon: 'pi pi-fw pi-check-square',
+                //     to: '/ecommerce/checkout-form'
+                // },
+                // {
+                //     label: 'Order History',
+                //     icon: 'pi pi-fw pi-history',
+                //     to: '/ecommerce/order-history'
+                // },
+                // {
+                //     label: 'Order Summary',
+                //     icon: 'pi pi-fw pi-file',
+                //     to: '/ecommerce/order-summary'
+                // }
             ]
         },
 

@@ -30,7 +30,14 @@ type ChildContainerProps = {
     children: ReactNode;
 };
 
+import { Product } from './product';
+import { Marca } from './marca';
+import { Color } from './color';
+
 export type {
+    Product,
+    Color,
+    Marca,
     Page,
     AppBreadcrumbProps,
     Breadcrumb,

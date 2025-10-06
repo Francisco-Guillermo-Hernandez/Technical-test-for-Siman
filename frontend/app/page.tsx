@@ -1,202 +1,190 @@
+
 'use client';
 import { Button } from 'primereact/button';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { DataView, DataViewLayoutOptions } from 'primereact/dataview';
+import { Dropdown, DropdownChangeEvent } from 'primereact/dropdown';
+import { Rating } from 'primereact/rating';
+import { InputText } from 'primereact/inputtext';
+import type { Product } from '@/types';
+import axios from 'axios';
+import { Paginator } from 'primereact/paginator';
 
 import env from '@/lib/environment';
 
-const queryClient = new QueryClient();
-
 function Home() {
     return (
-        <QueryClientProvider client={queryClient}>
-            <ReactQueryDevtools />
-            <ProductList />
-        </QueryClientProvider>
+        <ListDemo />
     );
 }
 
 export default Home;
 
-function ProductList() {
-    const [products] = useState([
-        {
-            price: '$140.00',
-            image: 'demo/images/ecommerce/product-list/product-list-4-1.png'
-        },
-        {
-            price: '$82.00',
-            image: 'demo/images/ecommerce/product-list/product-list-4-2.png'
-        },
-        {
-            price: '$54.00',
-            image: 'demo/images/ecommerce/product-list/product-list-4-3.png'
-        },
-        {
-            price: '$72.00',
-            image: 'demo/images/ecommerce/product-list/product-list-4-4.png'
-        },
-        {
-            price: '$99.00',
-            image: 'demo/images/ecommerce/product-list/product-list-4-5.png'
-        },
-        {
-            price: '$89.00',
-            image: 'demo/images/ecommerce/product-list/product-list-4-6.png'
-        }
-    ]);
+type Filters = {
+    page: number;
+    pageSize: number;
+}
 
-    const [products2, setProducts2] = useState([
-        {
-            color: 'Bluegray',
-            image: 'demo/images/ecommerce/product-list/product-list-2-1.png'
-        },
-        {
-            color: 'Indigo',
-            image: 'demo/images/ecommerce/product-list/product-list-2-2.png'
-        },
-        {
-            color: 'Green',
-            image: 'demo/images/ecommerce/product-list/product-list-2-3.png'
-        },
-        {
-            color: 'Blue',
-            image: 'demo/images/ecommerce/product-list/product-list-2-4.png'
-        }
-    ]);
+type GenericPaginator = {
+    page: number;
+    total: number;
+    hasPrev: boolean;
+    hasNext: boolean;
+    totalPages: number;
+    products: Array<Product>;
+}
 
-    const onColorChange = (color: string, productIndex: number) => {
-        const _products2 = [...products2];
-        _products2[productIndex]['color'] = color;
-        setProducts2(_products2);
+const ListDemo = () => {
+    const [isLoading, setLoading] = useState(false);
+    const [filters, setFilters] = useState<Filters>({ page: 1, pageSize: 9 });
+    const [dataViewValue, setDataViewValue] = useState<Omit<GenericPaginator, 'products'>>();
+    const [layout, setLayout] = useState<'grid' | 'list'>('grid');
+    const [httpError, setError] = useState<string | null>(null);
+    const [globalFilterValue, setGlobalFilterValue] = useState('');
+    const [sortOrder, setSortOrder] = useState<0 | 1 | -1 | null>(null);
+    const [sortField, setSortField] = useState('');
+
+    const [first, setFirst] = useState(1);
+
+    const [filteredValue, setFilteredValue] = useState<Array<Product> | null>(null);
+
+    const [sortKey, setSortKey] = useState(null);
+    const [products, setProducts] = useState<Array<Product>>([]);
+
+    const fetchProducts = async (filters: Filters) => {
+        setLoading(true);
+        try {
+            const params = new URLSearchParams({
+                page: filters.page.toString(),
+                pageSize: filters.pageSize.toString()
+            }).toString();
+
+            const { data } = await axios.get<GenericPaginator>(`${env.api}products/?${params}`);
+            const { products, ...remaining } = data;
+            setProducts(products);
+            setDataViewValue(remaining)
+        } catch (error) {
+            setError('Error al recuperar los productos');
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    useEffect(() => {
+        fetchProducts(filters);
+    }, [filters]);
+
+
+      const sortOptions = [
+        { label: 'De mayor a menor', value: '!precio' },
+        { label: 'De menor a mayor', value: 'precio' }
+    ];
+
+     const onSortChange = (event: DropdownChangeEvent) => {
+        const value = event.value;
+
+        if (value.indexOf('!') === 0) {
+            setSortOrder(-1);
+            setSortField(value.substring(1, value.length));
+            setSortKey(value);
+        } else {
+            setSortOrder(1);
+            setSortField(value);
+            setSortKey(value);
+        }
+    };
+
+ const onFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setGlobalFilterValue(value);
+        if (value.length === 0) {
+            setFilteredValue(null);
+        } else {
+            const filtered = products?.filter((product) => {
+                const productNameLowercase = product.nombre.toLowerCase();
+                const searchValueLowercase = value.toLowerCase();
+                return productNameLowercase.includes(searchValueLowercase);
+            });
+
+            setFilteredValue(filtered);
+        }
     };
 
 
-    const { isPending, error, data, isFetching } = useQuery({
-        queryKey: ['productsData'],
-        queryFn: async () => {
-        const response = await fetch(`${env.api}products/`)
-            return await response.json()
-        },
-    })
+       const dataViewHeader = (
+        <div className="flex flex-column md:flex-row md:justify-content-between gap-2">
+            <Dropdown value={sortKey} options={sortOptions} optionLabel="label" placeholder="Ordenar por precio" onChange={onSortChange} />
+            <span className="p-input-icon-left">
+                <i className="pi pi-search" />
+                <InputText value={globalFilterValue} onChange={onFilter} placeholder="Buscar por nombre" />
+            </span>
+        </div>
+    );
 
 
+
+
+    const itemTemplate = (data: Product, layout: 'grid' | 'list') => {
+        if (!data) return null;
+
+        return (
+            <div className="col-12 lg:col-4">
+                <div className="card m-3 border-1 surface-border">
+                    <div className="flex flex-wrap gap-2 align-items-center justify-content-between mb-2">
+                        <div className="flex align-items-center">
+                            <i className="pi pi-tag mr-2" />
+                            <span className="font-semibold">{data.subCategoriaId}</span>
+                        </div>
+                    </div>
+                    <div className="flex flex-column align-items-center text-center mb-3">
+                        <img src={`https://picsum.photos/200/150?random=${data.id}`} alt={data.nombre} className="w-9 shadow-2 my-3 mx-0" />
+                        <div className="text-2xl font-bold">{data.nombre}</div>
+                        <div className="mb-3">{data.descripcion}</div>
+                    </div>
+                    <div className="flex align-items-center justify-content-between">
+                        <span className="text-2xl font-semibold">${data.precio}</span>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const onPageChange = (event: any) => {
+
+
+        setFilters({ ...filters, page: event?.page + 1 })
+        setFirst(event.first);
+        console.log(event);
+
+    };
 
     return (
-        <>
-            <div className="card">
-
-
-                <div className="text-900 font-medium text-4xl mb-4">Popular Products</div>
-                <p className="mt-0 p-0 mb-5 text-700 text-2xl">Exclusive Selection</p>
-                <div className="grid -mt-3 -ml-3 -mr-3">
-                    {products.map((product, i) => {
-                        return (
-                            <div key={i} className="col-12 md:col-6 lg:col-4">
-                                <div className="p-2">
-                                    <div className="shadow-2 p-4 surface-card border-round">
-                                        <div className="relative mb-3">
-                                            <span
-                                                className="surface-card text-900 shadow-2 px-3 py-2 absolute"
-                                                style={{
-                                                    borderRadius: '1.5rem',
-                                                    left: '1rem',
-                                                    top: '1rem'
-                                                }}
-                                            >
-                                                Category
-                                            </span>
-                                            <img src={'/' + product.image} className="w-full" alt={i.toString()} />
-                                        </div>
-                                        <div className="flex justify-content-between align-items-center mb-3">
-                                            <span className="text-900 font-medium text-xl">Product Name</span>
-                                            <span>
-                                                <i className="pi pi-star-fill text-yellow-500 mr-1"></i>
-                                                <span className="font-medium">5.0</span>
-                                            </span>
-                                        </div>
-                                        <p className="mt-0 mb-3 text-700 line-height-3">Enim nec dui nunc mattis enim ut tellus. Tincidunt arcu.</p>
-                                        <span className="text-primary text-xl font-medium">{product.price}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })}
+        <div className="grid">
+            <div className="col-12">
+                <div className="card">
+                    <DataView
+                        value={ filteredValue || products ||  []}
+                        layout={layout}
+                        rows={filters.pageSize}
+                        first={first}
+                        totalRecords={dataViewValue?.total || 0}
+                        onPage={onPageChange}
+                        loading={isLoading}
+                        itemTemplate={itemTemplate}
+                        header={dataViewHeader}
+                        sortOrder={sortOrder}
+                         sortField={sortField}
+                    />
+                    <Paginator
+                        first={first}
+                        rows={filters.pageSize}
+                        totalRecords={dataViewValue?.total}
+                        onPageChange={onPageChange}
+                    />
                 </div>
             </div>
-
-            <div className="card">
-                <div className="grid -mt-3 -ml-3 -mr-3">
-                    {products2.map((product, i) => {
-                        return (
-                            <div key={i} className="col-12 md:col-6 lg:col-3 mb-5 lg:mb-0">
-                                <div className="mb-3 relative">
-                                    <img src={'/' + product.image} className="w-full" alt={i.toString()} />
-                                    <Button
-                                        type="button"
-                                        className="border-1 border-white border-round py-2 px-3 absolute bg-black-alpha-30 text-white inline-flex align-items-center justify-content-center hover:bg-black-alpha-40 transition-colors transition-duration-300 cursor-pointer"
-                                        style={{
-                                            bottom: '1rem',
-                                            left: '1rem',
-                                            width: 'calc(100% - 2rem)'
-                                        }}
-                                    >
-                                        <i className="pi pi-shopping-cart mr-3 text-base"></i>
-                                        <span className="text-base">Add to Cart</span>
-                                    </Button>
-                                </div>
-                                <div className="flex flex-column align-items-center">
-                                    <span className="text-xl text-900 font-medium mb-3">Product Name</span>
-                                    <span className="text-xl text-900 mb-3">$150.00</span>
-                                    <div className="flex align-items-center mb-3">
-                                        <div
-                                            className="w-2rem h-2rem flex-shrink-0 border-circle bg-bluegray-500 mr-3 cursor-pointer border-2 surface-border transition-all transition-duration-300"
-                                            style={{
-                                                width: '1.2rem',
-                                                height: '1.2rem',
-                                                boxShadow: product.color === 'Bluegray' ? '0 0 0 0.2rem var(--bluegray-500)' : undefined
-                                            }}
-                                            onClick={() => onColorChange('Bluegray', i)}
-                                        ></div>
-                                        <div
-                                            className="w-2rem h-2rem flex-shrink-0 border-circle bg-indigo-500 hover:border-indigo-500 mr-3 cursor-pointer border-2 surface-border transition-all transition-duration-300"
-                                            style={{
-                                                width: '1.2rem',
-                                                height: '1.2rem',
-                                                boxShadow: product.color === 'Indigo' ? '0 0 0 0.2rem var(--indigo-500)' : undefined
-                                            }}
-                                            onClick={() => onColorChange('Indigo', i)}
-                                        ></div>
-                                        <div
-                                            className="w-2rem h-2rem flex-shrink-0 border-circle bg-purple-500 hover:border-purple-500 mr-3 cursor-pointer border-2 surface-border transition-all transition-duration-300"
-                                            style={{
-                                                width: '1.2rem',
-                                                height: '1.2rem',
-                                                boxShadow: product.color === 'Green' ? '0 0 0 0.2rem var(--purple-500)' : undefined
-                                            }}
-                                            onClick={() => onColorChange('Green', i)}
-                                        ></div>
-                                        <div
-                                            className="w-2rem h-2rem flex-shrink-0 border-circle bg-cyan-500 hover:border-cyan-500 cursor-pointer border-2 surface-border transition-all transition-duration-300"
-                                            style={{
-                                                width: '1.2rem',
-                                                height: '1.2rem',
-                                                boxShadow: product.color === 'Blue' ? '0 0 0 0.2rem var(--cyan-500)' : undefined
-                                            }}
-                                            onClick={() => onColorChange('Blue', i)}
-                                        ></div>
-                                    </div>
-                                    <span className="text-700">{product.color}</span>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
-        </>
+        </div>
     );
-}
-
-// export default ProductList;
+};

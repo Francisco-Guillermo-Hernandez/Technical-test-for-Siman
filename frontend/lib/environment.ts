@@ -1,5 +1,6 @@
 const env = {
-    api: 'http://localhost:8283/api/v1/'
+    api: 'http://localhost:8282/api/v1/',
+    catalogs: 'http://localhost:8989/api/v1/catalogos/'
 }
 
 
