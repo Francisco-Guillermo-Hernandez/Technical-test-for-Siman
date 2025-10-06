@@ -1009,3 +1009,5 @@ INSERT INTO "productos" ("id", "nombre", "precio", "costo", "stock", "descripcio
 
 
 SET session_replication_role = 'origin';
+
+SELECT setval('productos_id_seq', COALESCE((SELECT MAX(id) FROM productos), 0));
